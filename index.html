@@ -1,0 +1,1578 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>跨時區 LINE 客服工單交接示範</title>
+<style>
+:root{
+  --bg:#f4f6f8;
+  --panel:#ffffff;
+  --panel-2:#f8fafb;
+  --ink:#16202a;
+  --ink-2:#44576a;
+  --muted:#7b8b9a;
+  --line:#dfe6ec;
+  --line-2:#eef2f6;
+  --accent:#12866b;
+  --accent-soft:#e3f4ef;
+  --accent-ink:#ffffff;
+  --ok:#1a7f52;
+  --ok-soft:#e4f4ec;
+  --warn:#9a6a05;
+  --warn-soft:#fbf1dc;
+  --bad:#a63232;
+  --bad-soft:#fbe9e9;
+  --chip:#eef2f6;
+  --bubble-in:#ffffff;
+  --bubble-out:#d9f2e6;
+  --chat-bg:#e8eef2;
+  --radius:12px;
+  --radius-sm:8px;
+  --shadow:0 1px 2px rgba(16,32,48,.06), 0 6px 18px rgba(16,32,48,.06);
+  --mono:ui-monospace, SFMono-Regular, Menlo, Consolas, "Courier New", monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#11171d;
+    --panel:#1a222a;
+    --panel-2:#212b34;
+    --ink:#e7eef4;
+    --ink-2:#b3c2ce;
+    --muted:#8095a6;
+    --line:#2d3945;
+    --line-2:#26313b;
+    --accent:#3ec49d;
+    --accent-soft:#1d3b34;
+    --accent-ink:#0d1519;
+    --ok:#5fd0a0;
+    --ok-soft:#1c3830;
+    --warn:#e0b45c;
+    --warn-soft:#3a3120;
+    --bad:#ec8a8a;
+    --bad-soft:#3b2426;
+    --chip:#26313b;
+    --bubble-in:#222c35;
+    --bubble-out:#1f4038;
+    --chat-bg:#151d24;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 6px 18px rgba(0,0,0,.28);
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:-apple-system, "Segoe UI", "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", sans-serif;
+  font-size:15px;
+  line-height:1.65;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:20px 16px 56px}
+header.top{padding:26px 0 8px}
+header.top h1{font-size:26px;line-height:1.35;margin:0 0 6px}
+header.top p.sub{margin:0;color:var(--ink-2);max-width:760px}
+.badgeline{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 0}
+.badge{
+  display:inline-block;padding:3px 10px;border-radius:999px;
+  background:var(--chip);color:var(--ink-2);font-size:12.5px;border:1px solid var(--line);
+}
+.badge.warnb{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.panel{
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:18px;margin:18px 0;
+}
+.panel h2{font-size:17px;margin:0 0 4px}
+.panel h3{font-size:14px;margin:18px 0 8px;color:var(--ink-2);letter-spacing:.02em}
+.panel p.hint{margin:0 0 14px;color:var(--muted);font-size:13px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.ctrls{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.ctrls.two{grid-template-columns:repeat(2,1fr)}
+.ctrls.three{grid-template-columns:repeat(3,1fr)}
+.field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.field label{font-size:12.5px;color:var(--ink-2);font-weight:600}
+.field .val{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+select,input[type=text],input[type=number],input[type=date],textarea{
+  font-family:inherit;font-size:14px;color:var(--ink);background:var(--panel-2);
+  border:1px solid var(--line);border-radius:var(--radius-sm);padding:8px 9px;width:100%;
+}
+textarea{min-height:104px;resize:vertical;line-height:1.6}
+input[type=range]{width:100%;accent-color:var(--accent)}
+button{
+  font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;
+  background:var(--accent);color:var(--accent-ink);border:0;border-radius:var(--radius-sm);
+  padding:9px 15px;
+}
+button.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+button:disabled{opacity:.45;cursor:not-allowed}
+.btnrow{display:flex;flex-wrap:wrap;gap:9px;margin-top:14px;align-items:center}
+.dims{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.chat{
+  background:var(--chat-bg);border-radius:var(--radius-sm);padding:12px;
+  height:430px;overflow-y:auto;border:1px solid var(--line);
+}
+.chat .day{text-align:center;font-size:11.5px;color:var(--muted);margin:6px 0 10px}
+.msg{display:flex;margin-bottom:10px;gap:8px}
+.msg.out{justify-content:flex-end}
+.bubble{
+  max-width:82%;padding:8px 11px;border-radius:14px;font-size:13.5px;line-height:1.6;
+  white-space:pre-wrap;word-break:break-word;border:1px solid var(--line);
+}
+.msg.in .bubble{background:var(--bubble-in);border-top-left-radius:4px}
+.msg.out .bubble{background:var(--bubble-out);border-top-right-radius:4px;border-color:transparent}
+.msg .who{font-size:11px;color:var(--muted);margin-bottom:3px;display:block}
+.ticket{border:1px solid var(--line);border-radius:var(--radius-sm);overflow:hidden}
+.ticket .thead{
+  background:var(--accent-soft);padding:10px 13px;display:flex;justify-content:space-between;
+  align-items:center;gap:10px;flex-wrap:wrap;
+}
+.ticket .tid{font-family:var(--mono);font-size:15px;font-weight:700;letter-spacing:.04em}
+.rows{display:grid;grid-template-columns:96px 1fr;gap:0}
+.rows .k{padding:8px 13px;font-size:12.5px;color:var(--muted);border-top:1px solid var(--line-2)}
+.rows .v{padding:8px 13px;font-size:13.5px;border-top:1px solid var(--line-2);word-break:break-word}
+.rows .v.miss{color:var(--bad)}
+.pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.bad{background:var(--bad-soft);color:var(--bad)}
+.pill.flat{background:var(--chip);color:var(--ink-2);font-weight:500}
+table.calc{width:100%;border-collapse:collapse;font-size:13.5px}
+table.calc th,table.calc td{padding:7px 9px;border-bottom:1px solid var(--line-2);text-align:left}
+table.calc th{color:var(--muted);font-weight:600;font-size:12.5px}
+table.calc td.num{text-align:right;font-variant-numeric:tabular-nums;font-family:var(--mono)}
+table.calc tr.total td{border-top:2px solid var(--line);border-bottom:0;font-weight:700}
+table.calc.off{opacity:.45;filter:grayscale(1)}
+.calcblock{position:relative}
+.calcwarn{
+  margin:8px 0 0;padding:8px 11px;border-radius:var(--radius-sm);
+  background:var(--bad-soft);color:var(--bad);font-size:12.5px;font-weight:600;
+}
+.clockgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:6px}
+.clock{background:var(--panel-2);border:1px solid var(--line);border-radius:var(--radius-sm);padding:12px 14px}
+.clock .zone{font-size:12.5px;color:var(--muted)}
+.clock .time{font-family:var(--mono);font-size:24px;font-weight:700;letter-spacing:.02em}
+.clock .date{font-size:12.5px;color:var(--ink-2);font-family:var(--mono)}
+.tl{list-style:none;margin:10px 0 0;padding:0}
+.tl li{
+  display:grid;grid-template-columns:150px 150px 1fr;gap:10px;padding:9px 0;
+  border-top:1px solid var(--line-2);align-items:baseline;
+}
+.tl li.head{border-top:0;color:var(--muted);font-size:12px;padding-bottom:2px}
+.tl .t{font-family:var(--mono);font-size:12.5px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.tl .t.dim{color:var(--muted)}
+.tl li.gap{background:var(--warn-soft);border-radius:var(--radius-sm);padding:9px 10px;margin:4px 0}
+.tl li.done .lbl{font-weight:600}
+.tl li.future{opacity:.5}
+pre.sum{
+  background:var(--panel-2);border:1px solid var(--line);border-radius:var(--radius-sm);
+  padding:14px;font-family:var(--mono);font-size:12.5px;line-height:1.7;
+  white-space:pre-wrap;word-break:break-word;margin:0;overflow-x:auto;color:var(--ink);
+}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:6px}
+.kpi{background:var(--panel-2);border:1px solid var(--line);border-radius:var(--radius-sm);padding:13px 14px}
+.kpi .n{font-size:22px;font-weight:700;font-family:var(--mono)}
+.kpi .l{font-size:12.5px;color:var(--muted)}
+.note{font-size:12.5px;color:var(--muted);margin-top:10px}
+footer.honest{
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+  padding:20px;margin-top:26px;
+}
+footer.honest h2{font-size:16px;margin:0 0 12px}
+footer.honest ul{margin:6px 0 16px;padding-left:20px}
+footer.honest li{margin-bottom:5px;color:var(--ink-2);font-size:13.5px}
+footer.honest .lead{font-weight:700;color:var(--ink);font-size:13.5px;margin:0}
+footer.honest p.fine{font-size:13px;color:var(--muted);margin:12px 0 0}
+hr.sep{border:0;border-top:1px solid var(--line-2);margin:16px 0}
+@media (max-width:900px){
+  .ctrls,.ctrls.two,.ctrls.three{grid-template-columns:repeat(2,1fr)}
+  .grid2,.grid3,.kpis,.clockgrid{grid-template-columns:1fr}
+  .tl li{grid-template-columns:1fr;gap:2px}
+  .tl li.head{display:none}
+  .tl li:not(.gap) .t::before{content:'台北 ';color:var(--muted)}
+  .tl li:not(.gap) .t.dim::before{content:'美西 '}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <h1>跨時區 LINE 客服工單交接示範</h1>
+  <p class="sub">台灣客服白天在 LINE 收到需求，美國客服上班時才接手。這個頁面示範在 LINE 官方帳號後面加一層工單：訊息進來自動抽出取件地、收件地、品項、重量、時效，產生工單編號，台美共用同一份看板並列兩地時間，交接時自動生成英文摘要，狀態一變就推回客戶的 LINE。</p>
+  <div class="badgeline">
+    <span class="badge warnb">示範用途</span>
+    <span class="badge">資料全為虛構</span>
+    <span class="badge">非任何客戶的實際畫面</span>
+    <span class="badge">非已完成的產品</span>
+  </div>
+</header>
+
+<section class="panel">
+  <h2>1. 客戶在 LINE 上說了什麼</h2>
+  <p class="hint">選一則示範訊息，或直接改寫下面的文字，按「解析並建單」。抽取用的是關鍵字與樣式比對，改了字就會抽到不一樣的結果。抽不到的欄位會標成需人工補，而且不會沿用上一則訊息的值——方向、時效、重量、材積只要沒講，就是空的，費用也不會試算。</p>
+  <div class="ctrls">
+    <div class="field" style="grid-column:span 2">
+      <label for="preset">示範訊息</label>
+      <select id="preset"></select>
+    </div>
+    <div class="field">
+      <label for="orderDate">台北收到訊息的日期</label>
+      <input type="date" id="orderDate" value="2026-09-18">
+    </div>
+    <div class="field">
+      <label for="orderHour">台北時間 <span class="val" id="orderHourVal">14:30</span></label>
+      <input type="range" id="orderHour" min="0" max="23" step="1" value="14">
+    </div>
+  </div>
+  <div class="field" style="margin-top:14px">
+    <label for="msg">LINE 訊息內容（可自行編輯，一行一則）</label>
+    <textarea id="msg" spellcheck="false"></textarea>
+  </div>
+  <div class="btnrow">
+    <button id="parseBtn">解析並建單</button>
+    <span class="pill flat" id="parseStat">尚未解析</span>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>2. 人工可覆寫的參數</h2>
+  <p class="hint">抽取結果會填進這裡；客服可以改。任何一格改動，下面的計費重、費用、時效、交接等待時間與英文摘要都會跟著重算。方向與時效抽不到時會停在「未判定」，要由客服選了才會出現報價。</p>
+  <div class="ctrls">
+    <div class="field">
+      <label for="direction">方向</label>
+      <select id="direction">
+        <option value="">未判定（需人工補）</option>
+        <option value="tw2us">台灣取件 &rarr; 美國</option>
+        <option value="us2tw">美國取件 &rarr; 台灣</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="service">時效</label>
+      <select id="service">
+        <option value="">未判定（需人工補）</option>
+        <option value="express">特快</option>
+        <option value="economy">經濟</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="weight">實際重量 <span class="val" id="weightVal">12.0 kg</span></label>
+      <input type="range" id="weight" min="0.5" max="70" step="0.5" value="12">
+    </div>
+    <div class="field">
+      <label>材積尺寸 L &times; W &times; H (cm)</label>
+      <div class="dims">
+        <input type="number" id="dimL" min="1" max="120" step="1" value="60">
+        <input type="number" id="dimW" min="1" max="120" step="1" value="40">
+        <input type="number" id="dimH" min="1" max="120" step="1" value="30">
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="grid2">
+  <section class="panel">
+    <h2>3. 台灣端：LINE 聊天室</h2>
+    <p class="hint">台灣客服照樣在 LINE 上對話，不改工作習慣。工單狀態一變，就在同一個聊天室推播給客戶。</p>
+    <div class="chat" id="chat"></div>
+  </section>
+
+  <section class="panel">
+    <h2>4. 自動產生的工單</h2>
+    <p class="hint">同一筆資料台美共用。計費重取實重與材積重的較大者，進位到 0.5 kg。</p>
+    <div class="ticket">
+      <div class="thead">
+        <span class="tid" id="ticketId">尚未建單</span>
+        <span id="ticketStatus" class="pill flat">待建單</span>
+      </div>
+      <div class="rows" id="ticketRows"></div>
+    </div>
+    <h3>計費試算（虛構費率表）</h3>
+    <div class="calcblock">
+      <table class="calc" id="calcTable"></table>
+      <p class="calcwarn" id="calcWarn" style="display:none"></p>
+    </div>
+    <p class="note" id="calcLimit">示範用上限：單邊 120 cm、單件 70 kg，超過需走貨運或分箱。</p>
+    <p class="note" id="etaNote"></p>
+  </section>
+</div>
+
+<section class="panel">
+  <h2>5. 台美雙邊看板：同一時刻，兩地時間並列</h2>
+  <p class="hint">美西有日光節約時間，台北沒有，所以時差在 15 與 16 小時之間跳。把日期拉到 11 月第一個星期日之後，下面的時差與縮寫會自己變。</p>
+  <div class="clockgrid">
+    <div class="clock">
+      <div class="zone">台北 Taipei (UTC+8)</div>
+      <div class="time" id="twTime">--:--</div>
+      <div class="date" id="twDate"></div>
+      <div style="margin-top:7px"><span class="pill flat" id="twShift"></span></div>
+    </div>
+    <div class="clock">
+      <div class="zone" id="ptZone">美西 US Pacific</div>
+      <div class="time" id="ptTime">--:--</div>
+      <div class="date" id="ptDate"></div>
+      <div style="margin-top:7px"><span class="pill flat" id="ptShift"></span></div>
+    </div>
+  </div>
+  <p class="note" id="offsetNote"></p>
+  <div class="kpis" style="grid-template-columns:1fr">
+    <div class="kpi"><div class="n" id="kpiWait">0 h</div><div class="l">這筆訊息的跨時區空窗（台灣送出到美國上班）</div></div>
+  </div>
+  <hr class="sep">
+  <h3>交接時間軸</h3>
+  <ul class="tl" id="timeline"></ul>
+  <div class="btnrow">
+    <button id="advanceBtn">推進到下一個狀態（推播給客戶）</button>
+    <button class="ghost" id="resetBtn">重設狀態</button>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>6. 交接給美國端的英文摘要</h2>
+  <p class="hint">由上面的結構化欄位組出來，不是把聊天訊息整段丟過去。地名與品項走對照表翻譯，表裡沒有的原文保留並標記，讓美國客服知道哪裡要跟台灣確認。</p>
+  <pre class="sum" id="summary"></pre>
+  <div class="btnrow">
+    <button class="ghost" id="copyBtn">複製摘要</button>
+    <span class="val" id="copyStat"></span>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>7. 有工單與沒工單的差別</h2>
+  <p class="hint">真正的差別是「美國端接手時要不要回頭問台灣」：左邊兩格是這筆訊息真的算出來的。右邊那格是省下的回讀時間，取決於下面兩個假設值，預設值刻意抓得保守。</p>
+  <div class="ctrls three">
+    <div class="field">
+      <label for="readSec">假設：美國客服回讀一則 LINE 訊息 <span class="val" id="readSecVal">15 秒</span></label>
+      <input type="range" id="readSec" min="5" max="60" step="5" value="15">
+    </div>
+    <div class="field">
+      <label for="summarySec">假設：讀一份結構化摘要 <span class="val" id="summarySecVal">60 秒</span></label>
+      <input type="range" id="summarySec" min="20" max="180" step="5" value="60">
+    </div>
+    <div class="field">
+      <label for="monthlyVol">貴司每月單量（估）<span class="val" id="monthlyVolVal">200 張</span></label>
+      <input type="range" id="monthlyVol" min="20" max="600" step="20" value="200">
+    </div>
+  </div>
+  <div class="kpis">
+    <div class="kpi"><div class="n" id="kpiFields">0 / 5</div><div class="l">自動抽到的欄位</div></div>
+    <div class="kpi"><div class="n" id="kpiAsk">0 欄</div><div class="l">交接前仍須回頭問台灣的欄位</div></div>
+    <div class="kpi"><div class="n" id="kpiSave">0 小時</div><div class="l">每月省下的回讀時間（假設值）</div></div>
+  </div>
+  <p class="note" id="valueNote"></p>
+</section>
+
+<footer class="honest">
+  <h2>誠實聲明</h2>
+
+  <p class="lead">這頁裡是模擬的（畫面做出來的效果，不是真的在運作）</p>
+  <ul>
+    <li>訊息來源是這頁的預設文字或你手動輸入的內容，不是真的從 LINE Messaging API 的 Webhook 進來的。</li>
+    <li>聊天室是 HTML 畫的，不是 LINE 的畫面；推播訊息只出現在這個頁面上，沒有真的送到任何人的手機。</li>
+    <li>工單編號在瀏覽器本機產生，沒有資料庫、沒有後端、沒有登入，重新整理就沒了。</li>
+    <li>費率表、地址、品項、客戶代號、國際快遞的服務等級全是虛構的，不對應任何業者的實際報價。</li>
+    <li>「美國端看板」跟台灣端是同一個頁面，不是兩地各自登入的系統；沒有權限控管、沒有帳號。</li>
+    <li>追蹤號一律顯示為待確認，因為美國端現在用什麼系統記單還沒確認過。</li>
+    <li>時間軸上各階段的間隔（建單 2 分鐘、台灣確認 12 分鐘、接手後 40 分鐘安排取件、再 8 個營業小時出貨）是寫死的示範值，不是統計出來的。間隔的長度是假的，但套用營業時間這件事是真的算的（見下一段）。</li>
+    <li>「每則訊息回讀秒數」「讀摘要秒數」「每月單量」是你自己拉的假設值，省下的時間是這兩個假設相減再乘單量，不是實測。預設值刻意抓保守（回讀 15 秒、讀摘要 60 秒），頁面也直接寫出損益兩平點，你可以自己驗。</li>
+  </ul>
+
+  <p class="lead">這頁裡是真的在跑的邏輯（你改參數，它就重算）</p>
+  <ul>
+    <li>欄位抽取：用關鍵字錨點與樣式比對（沒有接任何模型，所以可以離線驗），從你輸入的中文訊息裡抓方向、取件地、收件地、品項、重量、尺寸、時效，抓不到就列為需人工補，而且不會沿用上一則的值。改訊息內容，抽出來的東西就會變。</li>
+    <li>時區換算：美西日光節約時間依實際規則計算（三月第二個星期日 02:00 開始、十一月第一個星期日 02:00 結束），所以時差會在 15 與 16 小時之間切換，縮寫也跟著 PDT／PST 變。</li>
+    <li>交接等待時數：以美國端上班時間週一到週五 09:00 至 18:00（美西當地）推算下一個可接手的時點，跨週末會自己順延到下週一。接手之後的「取件已安排」與「已出貨」也照同一套營業時間累加，所以時間軸不會出現週六出貨這種事。</li>
+    <li>計費重：材積重以長寬高相乘除以 5000 計算，取實重與材積重的較大者，進位到 0.5 kg。</li>
+    <li>費用：基本費加每公斤費率，再乘燃油附加費率，全部由上面的參數算出來，不是寫死的數字。方向、時效、重量只要有一項沒確認，整張計費表就會變灰並顯示「欄位不足，無法試算」，不會給一個猜出來的金額。</li>
+    <li>預計送達日：從時間軸上的出貨時點往後推工作天，跳過週六與週日，所以不會出現送達早於出貨的怪數字。</li>
+    <li>英文摘要：由結構化欄位組出來的，對照表有的詞才翻譯，沒有的保留中文原文並標記 [zh]，所以你自己打的地址多半會保留原文——這就是這種作法的實際限制。中文地址會重排成英文郵址的由小到大順序（門牌在前、縣市在後）並補上 Taiwan；客戶沒提供的重量或尺寸，摘要會直接寫 not provided，不會填一個數字上去。</li>
+    <li>狀態推播文案：用工單欄位套版產生，工單內容不同，推播文字就不同。</li>
+  </ul>
+
+  <p class="lead">實際導入會怎麼做</p>
+  <p class="fine">正式版會以 LINE Messaging API 的 Webhook 接收訊息，每位使用者一個獨立聊天室，工單存進資料庫並保留修改紀錄；欄位抽取採規則先行、模糊的敘述再交給模型判讀，且一律留人工覆寫。狀態變更透過 Push Message 回客戶的 LINE，並保留人工接手與 AI 自動回覆的切換。</p>
+
+  <p class="fine">範圍上會分兩階段：第一階段（MVP）是 LINE 接入、欄位擷取、工單編號、一組後台登入給台灣客服補正確認、狀態自動推播；本頁示範的台美雙邊看板與英文交接摘要屬第二階段，屆時台美各一組登入、看板需登入才能存取。細分到每位客服的角色權限（誰能改狀態、誰只能看）與操作紀錄是後續項目。是否回寫國際快遞的追蹤號、以及要不要串既有系統，會等確認美國端目前用什麼記單之後再定範圍。</p>
+
+  <p class="fine">本頁所有人名、公司、地址、電話、金額、時間與工單編號皆為虛構，僅供技術示範；不代表任何客戶的實際流程或畫面，也不是已完成上線的產品。</p>
+</footer>
+
+</div>
+
+<script>
+/* ============================================================
+   Pure logic (no DOM). Kept at top level so it can be unit
+   tested outside the browser.
+   ============================================================ */
+
+var WEEKDAY_TW = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'];
+
+function pad2(n){ return (n < 10 ? '0' : '') + n; }
+
+function round1(n){ return Math.round(n * 10) / 10; }
+
+/* --- US Pacific daylight saving ----------------------------- */
+
+function nthSundayOfMonth(year, monthIndex, nth){
+  var firstDow = new Date(Date.UTC(year, monthIndex, 1)).getUTCDay();
+  return 1 + ((7 - firstDow) % 7) + (nth - 1) * 7;
+}
+
+/* DST starts 2nd Sunday of March 02:00 PST (10:00 UTC),
+   ends 1st Sunday of November 02:00 PDT (09:00 UTC). */
+function pacificOffsetHours(utcMs){
+  var year = new Date(utcMs).getUTCFullYear();
+  var startMs = Date.UTC(year, 2, nthSundayOfMonth(year, 2, 2), 10, 0, 0);
+  var endMs = Date.UTC(year, 10, nthSundayOfMonth(year, 10, 1), 9, 0, 0);
+  return (utcMs >= startMs && utcMs < endMs) ? -7 : -8;
+}
+
+function pacificAbbr(utcMs){
+  return pacificOffsetHours(utcMs) === -7 ? 'PDT' : 'PST';
+}
+
+function taipeiWallToUtc(y, m, d, hh, mm){
+  return Date.UTC(y, m - 1, d, hh, mm, 0) - 8 * 3600000;
+}
+
+function wallParts(utcMs, offsetHours){
+  var d = new Date(utcMs + offsetHours * 3600000);
+  return {
+    y: d.getUTCFullYear(),
+    m: d.getUTCMonth() + 1,
+    d: d.getUTCDate(),
+    hh: d.getUTCHours(),
+    mm: d.getUTCMinutes(),
+    dow: d.getUTCDay()
+  };
+}
+
+function fmtTime(p){ return pad2(p.hh) + ':' + pad2(p.mm); }
+
+function fmtDate(p){ return p.y + '-' + pad2(p.m) + '-' + pad2(p.d) + ' ' + WEEKDAY_TW[p.dow]; }
+
+var WEEKDAY_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+function fmtDateEn(p){ return p.y + '-' + pad2(p.m) + '-' + pad2(p.d) + ' ' + WEEKDAY_EN[p.dow]; }
+
+function fmtShort(p){ return pad2(p.m) + '/' + pad2(p.d) + ' ' + pad2(p.hh) + ':' + pad2(p.mm); }
+
+function taipeiParts(utcMs){ return wallParts(utcMs, 8); }
+
+function pacificParts(utcMs){ return wallParts(utcMs, pacificOffsetHours(utcMs)); }
+
+function isBusinessHour(p, startH, endH){
+  return p.dow >= 1 && p.dow <= 5 && p.hh >= startH && p.hh < endH;
+}
+
+/* Next moment the US desk (Mon-Fri 09:00-18:00 Pacific) can pick it up. */
+function usPickupUtc(arrivalUtc){
+  var here = pacificParts(arrivalUtc);
+  if (isBusinessHour(here, 9, 18)) {
+    return { pickupUtc: arrivalUtc, waitHours: 0, immediate: true };
+  }
+  for (var i = 0; i <= 12; i++) {
+    var noonish = Date.UTC(here.y, here.m - 1, here.d + i, 19, 0, 0);
+    var off = pacificOffsetHours(noonish);
+    var dayP = wallParts(noonish, off);
+    if (dayP.dow === 0 || dayP.dow === 6) { continue; }
+    var startUtc = Date.UTC(dayP.y, dayP.m - 1, dayP.d, 9, 0, 0) - off * 3600000;
+    if (startUtc >= arrivalUtc) {
+      return {
+        pickupUtc: startUtc,
+        waitHours: round1((startUtc - arrivalUtc) / 3600000),
+        immediate: false
+      };
+    }
+  }
+  return { pickupUtc: arrivalUtc, waitHours: 0, immediate: true };
+}
+
+/* Walk forward consuming only US-desk business minutes, so a step can never
+   land in the evening or on a weekend. */
+function addBusinessMinutes(startUtc, minutes){
+  var cur = usPickupUtc(startUtc).pickupUtc;
+  var left = Number(minutes) || 0;
+  var guard = 0;
+  while (left > 0 && guard < 400) {
+    guard++;
+    var p = pacificParts(cur);
+    var off = pacificOffsetHours(cur);
+    var endUtc = Date.UTC(p.y, p.m - 1, p.d, 18, 0, 0) - off * 3600000;
+    var avail = Math.floor((endUtc - cur) / 60000);
+    if (avail <= 0) { cur = usPickupUtc(cur + 60000).pickupUtc; continue; }
+    if (left <= avail) { cur = cur + left * 60000; left = 0; }
+    else { left -= avail; cur = usPickupUtc(endUtc + 60000).pickupUtc; }
+  }
+  return cur;
+}
+
+function addBusinessDays(utcMs, days){
+  var p = taipeiParts(utcMs);
+  var cursor = Date.UTC(p.y, p.m - 1, p.d, 12, 0, 0);
+  var added = 0;
+  while (added < days) {
+    cursor += 86400000;
+    var dow = new Date(cursor).getUTCDay();
+    if (dow !== 0 && dow !== 6) { added++; }
+  }
+  var c = new Date(cursor);
+  return { y: c.getUTCFullYear(), m: c.getUTCMonth() + 1, d: c.getUTCDate(), dow: c.getUTCDay(), hh: 0, mm: 0 };
+}
+
+/* --- weight and price -------------------------------------- */
+
+function volumetricKg(l, w, h){
+  return (Number(l) * Number(w) * Number(h)) / 5000;
+}
+
+function chargeableKg(actualKg, volKg){
+  var m = Math.max(Number(actualKg) || 0, Number(volKg) || 0);
+  return Math.ceil(m * 2) / 2;
+}
+
+/* Fictional rate card. Not any carrier's real pricing. */
+var RATES = {
+  tw2us: {
+    express: { base: 620, perKg: 350, fuel: 0.18, etaMin: 2, etaMax: 3 },
+    economy: { base: 480, perKg: 230, fuel: 0.12, etaMin: 5, etaMax: 7 }
+  },
+  us2tw: {
+    express: { base: 700, perKg: 380, fuel: 0.18, etaMin: 3, etaMax: 4 },
+    economy: { base: 520, perKg: 250, fuel: 0.12, etaMin: 6, etaMax: 9 }
+  }
+};
+
+function quote(direction, service, kg){
+  var r = RATES[direction][service];
+  var weightFee = Math.round(r.perKg * kg);
+  var subtotal = r.base + weightFee;
+  var fuel = Math.round(subtotal * r.fuel);
+  return {
+    base: r.base,
+    perKg: r.perKg,
+    kg: kg,
+    weightFee: weightFee,
+    subtotal: subtotal,
+    fuelRate: r.fuel,
+    fuel: fuel,
+    total: subtotal + fuel,
+    etaMin: r.etaMin,
+    etaMax: r.etaMax
+  };
+}
+
+/* --- message parsing ---------------------------------------- */
+
+var PICKUP_ANCHORS = ['取件地', '取件', '取貨', '提貨', '東西在', '貨在', '寄件地', '發貨地'];
+var DROP_ANCHORS = ['收件地址', '收件地', '收件人在', '收件人', '送到', '寄到', '送至', '運到', '送往', '寄往', '目的地'];
+var ITEM_ANCHORS = ['品項', '內容物', '內容是', '東西是', '貨物是', '商品是', '物品'];
+var FILLERS = ['是', '在', '為', ':', '：', '的'];
+
+var EXPRESS_WORDS = ['急件', '最快', '加急', '明天', '隔天', '越快越好', '趕'];
+var ECONOMY_WORDS = ['不急', '便宜', '經濟', '省錢', '慢一點', '沒有急'];
+
+var SPLIT_RE = new RegExp('[\\s,\\uff0c\\u3001\\u3002\\uff1b;\\uff01!\\n]+');
+var CJK_RE = new RegExp('[\\u3400-\\u9fff]');
+var WEIGHT_RE = new RegExp('(\\d+(?:\\.\\d+)?)\\s*(\\u516c\\u65a4|kgs|kgm|kg|KG|Kg)');
+var GRAM_RE = new RegExp('(\\d+(?:\\.\\d+)?)\\s*(\\u516c\\u514b|\\u514b|g)(?![a-zA-Z])');
+var DIM_RE = new RegExp('(\\d{1,3})\\s*[xX*\\u00d7]\\s*(\\d{1,3})\\s*[xX*\\u00d7]\\s*(\\d{1,3})');
+var TW_ADDR_RE = new RegExp('([\\u4e00-\\u9fff]{2,3}[\\u5e02\\u7e23][\\u4e00-\\u9fff0-9]{2,28}?\\u865f)');
+var US_ADDR_SRC = '([A-Za-z][A-Za-z0-9.\\-]*(?:[ ]+[A-Za-z0-9.\\-]+)*,?[ ]*(?:CA|NJ|NY|TX|WA|OR|NV|AZ|IL|FL|GA|MA))\\b';
+var US_ADDR_RE = new RegExp(US_ADDR_SRC);
+var US_ADDR_HEAD_RE = new RegExp('^' + US_ADDR_SRC);
+var ADDR_HINTS = ['市', '縣', '區', '路', '街', '號', '段', '倉庫', '鄉', '鎮'];
+var NOT_ADDR_WORDS = ['回台灣', '回美國', '請問', '代購', '我要', '我有', '幫我', '多少錢', '一下'];
+var DEADLINE_RE = new RegExp('([\\u4e0b\\u672c]?[\\u9031\\u79ae]?[\\u4e00\\u4e8c\\u4e09\\u56db\\u4e94\\u516d\\u65e5\\d]{1,3}[\\u5929\\u65e5]?[\\u5167\\u524d])');
+
+function stripFillers(s){
+  var out = String(s || '').trim();
+  var changed = true;
+  while (changed && out.length > 0) {
+    changed = false;
+    for (var i = 0; i < FILLERS.length; i++) {
+      if (out.indexOf(FILLERS[i]) === 0) {
+        out = out.slice(FILLERS[i].length).trim();
+        changed = true;
+      }
+    }
+  }
+  return out;
+}
+
+function cutAtAnchor(rest, anchors, selfAnchor){
+  var cut = rest.length;
+  for (var i = 0; i < anchors.length; i++) {
+    if (anchors[i] === selfAnchor) { continue; }
+    var at = rest.indexOf(anchors[i]);
+    if (at > 0 && at < cut) { cut = at; }
+  }
+  return rest.slice(0, cut);
+}
+
+function tidy(s){
+  return stripFillers(String(s || '').trim()).replace(new RegExp('[\\uff0c,\\u3002.\\s]+$'), '').trim();
+}
+
+/* How much does this look like an address rather than a fragment of a sentence? */
+function scoreAddress(s){
+  var v = tidy(s);
+  if (v.length < 2 || v.length > 44) { return -1; }
+  var score = 0;
+  var i;
+  for (i = 0; i < NOT_ADDR_WORDS.length; i++) {
+    if (v.indexOf(NOT_ADDR_WORDS[i]) >= 0) { score -= 6; }
+  }
+  for (i = 0; i < ADDR_HINTS.length; i++) {
+    if (v.indexOf(ADDR_HINTS[i]) >= 0) { score += 2; }
+  }
+  if (TW_ADDR_RE.test(v)) { score += 5; }
+  if (US_ADDR_HEAD_RE.test(v)) { score += 5; }
+  if (v.length >= 6) { score += 1; }
+  return score;
+}
+
+function anchorCandidates(text, anchor, allAnchors){
+  var out = [];
+  var at = text.indexOf(anchor);
+  if (at < 0) { return out; }
+  var head = text.slice(0, at);
+  var tail = stripFillers(text.slice(at + anchor.length));
+  if (tail.length > 0) {
+    var seg = cutAtAnchor(tail, allAnchors, anchor);
+    var um = seg.match(US_ADDR_HEAD_RE);
+    out.push(um ? um[1] : seg.split(SPLIT_RE)[0]);
+  }
+  /* Patterns like "台北市信義區松仁路100號取件" put the value before the anchor. */
+  if (head.length > 0) {
+    var pieces = head.split(SPLIT_RE);
+    out.push(pieces[pieces.length - 1]);
+  }
+  return out;
+}
+
+function scoreItem(s){
+  var v = tidy(s);
+  if (v.length < 2 || v.length > 26) { return -1; }
+  var score = 1;
+  var i;
+  for (i = 0; i < NOT_ADDR_WORDS.length; i++) {
+    if (v.indexOf(NOT_ADDR_WORDS[i]) >= 0) { score -= 6; }
+  }
+  for (i = 0; i < ADDR_HINTS.length; i++) {
+    if (v.indexOf(ADDR_HINTS[i]) >= 0) { score -= 3; }
+  }
+  if (new RegExp('[\\u54c1\\u4ef6\\u6a23\\u98df\\u6587\\u8863\\u6a5f\\u96f6\\u7269]').test(v)) { score += 3; }
+  return score;
+}
+
+function grabByAnchor(text, anchors, otherAnchors, scorer){
+  var all = anchors.concat(otherAnchors);
+  var score = scorer || scoreAddress;
+  var best = '';
+  var bestScore = 0;
+  for (var i = 0; i < anchors.length; i++) {
+    var cands = anchorCandidates(text, anchors[i], all);
+    for (var j = 0; j < cands.length; j++) {
+      var c = tidy(cands[j]);
+      var s = score(c);
+      if (s > bestScore) { bestScore = s; best = c; }
+    }
+  }
+  return best;
+}
+
+function parseMessage(text){
+  var raw = String(text || '').replace(new RegExp('\\r', 'g'), '');
+  var flat = raw.split(new RegExp('\\n', 'g')).join(' ');
+  var out = {
+    pickup: '', dropoff: '', item: '',
+    weightKg: 0, dims: null, service: '',
+    deadline: '', direction: '', missing: [],
+    dimsMissing: true, directionMissing: true
+  };
+
+  /* direction */
+  var toUs = flat.indexOf('回美國') >= 0 || flat.indexOf('到美國') >= 0 ||
+             flat.indexOf('寄美國') >= 0 || flat.indexOf('送到美') >= 0 ||
+             flat.indexOf('去美國') >= 0 || flat.indexOf('運美國') >= 0;
+  var toTw = flat.indexOf('回台灣') >= 0 || flat.indexOf('到台灣') >= 0 ||
+             flat.indexOf('寄回台') >= 0 || flat.indexOf('代購') >= 0 ||
+             flat.indexOf('去台灣') >= 0 || flat.indexOf('運台灣') >= 0;
+  if (toTw && !toUs) { out.direction = 'us2tw'; }
+  else if (toUs) { out.direction = 'tw2us'; }
+
+  /* addresses */
+  out.pickup = grabByAnchor(flat, PICKUP_ANCHORS, DROP_ANCHORS);
+  out.dropoff = grabByAnchor(flat, DROP_ANCHORS, PICKUP_ANCHORS);
+
+  if (!out.pickup || !out.dropoff) {
+    var twAddr = flat.match(TW_ADDR_RE);
+    var usAddr = flat.match(US_ADDR_RE);
+    var twVal = twAddr ? twAddr[1] : '';
+    var usVal = usAddr ? usAddr[1] : '';
+    if (out.direction === 'us2tw') {
+      if (!out.pickup && usVal) { out.pickup = usVal; }
+      if (!out.dropoff && twVal) { out.dropoff = twVal; }
+    } else {
+      if (!out.pickup && twVal) { out.pickup = twVal; }
+      if (!out.dropoff && usVal) { out.dropoff = usVal; }
+    }
+  }
+
+  if (out.pickup && out.pickup === out.dropoff) { out.dropoff = ''; }
+
+  /* No explicit wording? Infer the lane from which side looks Taiwanese. */
+  if (!out.direction && out.pickup && out.dropoff) {
+    var pickTw = TW_ADDR_RE.test(out.pickup) || CJK_RE.test(out.pickup);
+    var dropTw = TW_ADDR_RE.test(out.dropoff) || CJK_RE.test(out.dropoff);
+    if (pickTw && !dropTw) { out.direction = 'tw2us'; }
+    else if (!pickTw && dropTw) { out.direction = 'us2tw'; }
+  }
+
+  /* item */
+  out.item = grabByAnchor(flat, ITEM_ANCHORS, PICKUP_ANCHORS.concat(DROP_ANCHORS), scoreItem);
+
+  /* weight */
+  var wm = flat.match(WEIGHT_RE);
+  if (wm) {
+    out.weightKg = parseFloat(wm[1]);
+  } else {
+    var gm = flat.match(GRAM_RE);
+    if (gm) { out.weightKg = Math.round(parseFloat(gm[1])) / 1000; }
+  }
+
+  /* dimensions */
+  var dm = flat.match(DIM_RE);
+  if (dm) {
+    out.dims = { l: parseInt(dm[1], 10), w: parseInt(dm[2], 10), h: parseInt(dm[3], 10) };
+  }
+
+  /* service level */
+  var i;
+  for (i = 0; i < EXPRESS_WORDS.length; i++) {
+    if (flat.indexOf(EXPRESS_WORDS[i]) >= 0) { out.service = 'express'; break; }
+  }
+  if (!out.service) {
+    for (i = 0; i < ECONOMY_WORDS.length; i++) {
+      if (flat.indexOf(ECONOMY_WORDS[i]) >= 0) { out.service = 'economy'; break; }
+    }
+  }
+  var dl = flat.match(DEADLINE_RE);
+  if (dl) {
+    out.deadline = dl[1];
+    if (!out.service) { out.service = 'express'; }
+  }
+
+  if (!out.pickup) { out.missing.push('取件地'); }
+  if (!out.dropoff) { out.missing.push('收件地'); }
+  if (!out.item) { out.missing.push('品項'); }
+  if (!out.weightKg) { out.missing.push('重量'); }
+  if (!out.service) { out.missing.push('時效'); }
+
+  out.dimsMissing = !out.dims;
+  out.directionMissing = !out.direction;
+  out.foundCount = 5 - out.missing.length;
+  return out;
+}
+
+/* --- ticket id ---------------------------------------------- */
+
+function hashCode(s){
+  var h = 0;
+  for (var i = 0; i < s.length; i++) {
+    h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+  }
+  return Math.abs(h);
+}
+
+function makeTicketId(text, taipeiP, direction){
+  var prefix = direction === 'us2tw' ? 'UT' : 'TU';
+  var stamp = String(taipeiP.y).slice(2) + pad2(taipeiP.m) + pad2(taipeiP.d);
+  var serial = pad2(0) + String(hashCode(text + stamp) % 10000);
+  serial = serial.slice(serial.length - 4);
+  while (serial.length < 4) { serial = '0' + serial; }
+  return prefix + '-' + stamp + '-' + serial;
+}
+
+/* --- english summary ---------------------------------------- */
+
+var DICT = {
+  '新北市三重區': 'Sanchong Dist., New Taipei City',
+  '台北市信義區': 'Xinyi Dist., Taipei City',
+  '台中市西屯區': 'Xitun Dist., Taichung City',
+  '高雄市前鎮區': 'Qianzhen Dist., Kaohsiung City',
+  '桃園市中壢區': 'Zhongli Dist., Taoyuan City',
+  '重新路三段': 'Sec. 3, Chongxin Rd.',
+  '松仁路': 'Songren Rd.',
+  '台灣大道三段': 'Sec. 3, Taiwan Blvd.',
+  '倉庫': 'warehouse',
+  '五金零件樣品': 'hardware part samples',
+  '電子零件': 'electronic components',
+  '保健食品': 'health supplements',
+  '服飾': 'apparel',
+  '文件': 'documents',
+  '機械樣品': 'machinery samples',
+  '台灣': 'Taiwan',
+  '美國': 'USA'
+};
+
+var SENTINEL = '\u0001';
+var HOUSE_NO_RE = new RegExp('(\\d+)\\u865f', 'g');
+var DICT_KEYS = null;
+
+function dictKeys(){
+  if (DICT_KEYS) { return DICT_KEYS; }
+  var keys = [];
+  for (var k in DICT) { if (Object.prototype.hasOwnProperty.call(DICT, k)) { keys.push(k); } }
+  keys.sort(function(a, b){ return b.length - a.length; });
+  DICT_KEYS = keys;
+  return keys;
+}
+
+/* Longest-match scan. Known tokens are translated, unknown runs are kept as
+   written; SENTINEL marks a token boundary so the pieces join cleanly. */
+function translateField(s, isAddress){
+  var src = String(s || '');
+  if (!src) { return { text: '', untranslated: false }; }
+  var work = src.replace(HOUSE_NO_RE, SENTINEL + 'No. $1' + SENTINEL);
+  var keys = dictKeys();
+  var parts = [];
+  var buf = '';
+  var i = 0;
+  while (i < work.length) {
+    var ch = work.charAt(i);
+    if (ch === SENTINEL) {
+      if (buf.trim()) { parts.push(buf.trim()); }
+      buf = '';
+      i++;
+      continue;
+    }
+    var hit = '';
+    for (var j = 0; j < keys.length; j++) {
+      if (work.slice(i, i + keys[j].length) === keys[j]) { hit = keys[j]; break; }
+    }
+    if (hit) {
+      if (buf.trim()) { parts.push(buf.trim()); }
+      buf = '';
+      parts.push(DICT[hit]);
+      i += hit.length;
+    } else {
+      buf += ch;
+      i++;
+    }
+  }
+  if (buf.trim()) { parts.push(buf.trim()); }
+
+  /* Chinese writes an address big-to-small; English postal order is the
+     reverse, and that is what the US desk and the carrier label expect. */
+  var ordered = (isAddress && CJK_RE.test(src)) ? parts.slice().reverse() : parts.slice();
+  var out = ordered.join(', ').replace(new RegExp('\\s+', 'g'), ' ').trim();
+  out = out.replace(new RegExp(',\\s*,', 'g'), ',');
+  if (isAddress && CJK_RE.test(src) && out && out.slice(-7) !== ' Taiwan') { out = out + ', Taiwan'; }
+  var left = CJK_RE.test(out);
+  if (left) {
+    /* Anything the dictionary does not cover is passed through, flagged. */
+    out = out.replace(new RegExp('([\\u3400-\\u9fff][\\u3400-\\u9fff0-9]*)', 'g'), '[zh: $1]');
+  }
+  return { text: out, untranslated: left };
+}
+
+function buildEnglishSummary(model){
+  var t = model.ticket;
+  var pick = translateField(t.pickup, true);
+  var drop = translateField(t.dropoff, true);
+  var item = translateField(t.item, false);
+  var L = [];
+  var notes = [];
+
+  L.push('=== HANDOVER BRIEF (auto-generated from ticket fields) ===');
+  L.push('TICKET      : ' + t.id);
+  L.push('LANE        : ' + (t.direction === 'us2tw' ? 'USA pickup -> Taiwan delivery'
+         : (t.direction === 'tw2us' ? 'Taiwan pickup -> USA delivery'
+         : '** NOT STATED BY CUSTOMER - confirm with Taipei desk **')));
+  L.push('OPENED      : ' + fmtDateEn(model.twP) + ' ' + fmtTime(model.twP) + ' Taipei (UTC+8)');
+  L.push('            = ' + fmtDateEn(model.ptP) + ' ' + fmtTime(model.ptP) + ' ' + model.ptAbbr + ' (UTC' + model.ptOffset + ')');
+  L.push('CUSTOMER    : LINE user ' + t.lineUser + ' (fictional demo account)');
+  L.push('');
+  L.push('PICKUP      : ' + (pick.text || '** MISSING - ask Taipei desk **'));
+  L.push('DELIVER TO  : ' + (drop.text || '** MISSING - ask Taipei desk **'));
+  L.push('CONTENTS    : ' + (item.text || '** MISSING - ask Taipei desk **'));
+  L.push('ACTUAL WT   : ' + (model.weightKnown ? model.actualKg.toFixed(1) + ' kg'
+         : '** not provided by customer - confirm before quoting **'));
+  L.push('DIM WT      : ' + (model.dims
+         ? model.volKg.toFixed(2) + ' kg (' + model.dims.l + 'x' + model.dims.w + 'x' + model.dims.h + ' cm / 5000)'
+         : '** not provided by customer - confirm before quoting **'));
+  L.push('CHARGEABLE  : ' + (model.quotable ? model.chargeKg.toFixed(1) + ' kg'
+         : '** not calculated - fields above are missing **'));
+  L.push('SERVICE     : ' + (t.service === 'express' ? 'EXPRESS' : (t.service === 'economy' ? 'ECONOMY'
+         : '** NOT STATED BY CUSTOMER **')) +
+         (model.price ? '  (quoted TWD ' + model.price.total + ', indicative only)'
+         : '  (no quote - fields missing)'));
+  L.push('TARGET ETA  : ' + model.etaTextEn);
+  if (t.deadline) { L.push('CUST DEADLINE: [zh: ' + t.deadline + '] (customer wording, not confirmed)'); }
+  L.push('TRACKING NO : pending - US-side system not confirmed yet');
+  L.push('');
+  L.push('HANDOVER TIMING');
+  L.push('  Taipei desk logged it at ' + fmtTime(model.twP) + ' Taipei.');
+  if (model.wait.immediate) {
+    L.push('  US desk is inside business hours now - no waiting.');
+  } else {
+    L.push('  US desk opens ' + fmtShort(model.pickupPtP) + ' ' + model.pickupAbbr +
+           ' (' + model.wait.waitHours + ' h after the message arrived).');
+  }
+  L.push('');
+  L.push('ACTION FOR US DESK');
+  if (t.openFields.length > 0) {
+    notes.push('Fields the parser could not fill: ' + t.missingEn.join(', ') + '. Do not quote or book until these are confirmed.');
+  }
+  if (pick.untranslated || drop.untranslated || item.untranslated || t.deadline) {
+    notes.push('Some values are still in Chinese ([zh: ...]) - including the customer deadline if one was given. Confirm the wording with the Taipei desk.');
+  }
+  notes.push('Confirm pickup window with shipper, then update the ticket status so the customer gets the LINE push.');
+  for (var i = 0; i < notes.length; i++) { L.push('  ' + (i + 1) + '. ' + notes[i]); }
+  return L.join('\n');
+}
+
+/* --- status flow and LINE push copy -------------------------- */
+
+var FLOW = [
+  { key: 'received', tw: '已收到需求', side: 'tw', offsetMin: 0 },
+  { key: 'created', tw: '已建單', side: 'tw', offsetMin: 2 },
+  { key: 'tw_confirmed', tw: '台灣客服已確認', side: 'tw', offsetMin: 12 },
+  { key: 'us_taken', tw: '美國客服已接手', side: 'us', offsetMin: null },
+  { key: 'pickup_set', tw: '取件已安排', side: 'us', offsetMin: 40 },
+  { key: 'shipped', tw: '已出貨', side: 'us', offsetMin: 480 }
+];
+
+function buildTimeline(t0Utc, pickupUtc){
+  var out = [];
+  /* the US side can never start before the last Taiwan-side step */
+  var usBase = usPickupUtc(Math.max(pickupUtc, t0Utc + 12 * 60000)).pickupUtc;
+  for (var i = 0; i < FLOW.length; i++) {
+    var step = FLOW[i];
+    var utc;
+    if (step.key === 'us_taken') {
+      utc = usBase;
+    } else if (step.side === 'tw') {
+      utc = t0Utc + step.offsetMin * 60000;
+    } else {
+      utc = addBusinessMinutes(usBase, step.offsetMin);
+    }
+    out.push({ key: step.key, label: step.tw, side: step.side, utc: utc });
+  }
+  return out;
+}
+
+function pushCopy(stepKey, model){
+  var t = model.ticket;
+  var head = '【工單 ' + t.id + '】';
+  if (stepKey === 'created') {
+    return head + '已收到您的需求\n' +
+      '取件：' + (t.pickup || '待確認') + '\n' +
+      '收件：' + (t.dropoff || '待確認') + '\n' +
+      '品項：' + (t.item || '待確認') +
+        (model.quotable ? '（計費重 ' + model.chargeKg.toFixed(1) + ' kg）' : '（重量/尺寸待確認）') + '\n' +
+      '目前狀態：台灣客服確認中\n' +
+      '需修正請直接回覆此訊息';
+  }
+  if (stepKey === 'tw_confirmed') {
+    return head + '台灣端已確認，已轉交美國客服\n' +
+      (model.price ? '預估費用：NT$' + model.price.total + '（含燃油附加，實際以確認為準）\n'
+        : '預估費用：欄位補齊後才試算\n') +
+      '美國客服上班時間：台北時間 ' + model.usOpenTwText + '\n' +
+      '預計回覆：' + model.usReplyText;
+  }
+  if (stepKey === 'us_taken') {
+    return head + '美國客服已接手\n' +
+      '美西時間 ' + fmtShort(model.pickupPtP) + ' ' + model.pickupAbbr + '\n' +
+      '正在安排取件，有進度會再通知您';
+  }
+  if (stepKey === 'pickup_set') {
+    return head + '取件已安排\n' +
+      '服務等級：' + (t.service === 'express' ? '特快' : '經濟') + '\n' +
+      '請協助將貨物包裝完成，外箱請註明工單號';
+  }
+  if (stepKey === 'shipped') {
+    return head + '已出貨\n' +
+      '追蹤號：待美國端系統回寫\n' +
+      '預計送達：' + model.etaText + '\n' +
+      '感謝您的使用';
+  }
+  return '';
+}
+
+/* --- assemble the whole model ------------------------------- */
+
+function buildModel(input){
+  var dateParts = input.orderDate.split('-');
+  var y = parseInt(dateParts[0], 10);
+  var mo = parseInt(dateParts[1], 10);
+  var da = parseInt(dateParts[2], 10);
+  var t0 = taipeiWallToUtc(y, mo, da, input.orderHour, 30);
+
+  var twP = taipeiParts(t0);
+  var ptOffset = pacificOffsetHours(t0);
+  var ptP = pacificParts(t0);
+  var wait = usPickupUtc(t0);
+  var pickupPtP = pacificParts(wait.pickupUtc);
+  var pickupTwP = taipeiParts(wait.pickupUtc);
+
+  var dims = input.dims || null;
+  var volKg = dims ? volumetricKg(dims.l, dims.w, dims.h) : 0;
+  var chargeKg = chargeableKg(input.actualKg, volKg);
+  /* A price is only honest when the lane, the service level and a weight are
+     all known. If any of them is missing the quote is withheld, not guessed. */
+  var quotable = !!input.direction && !!input.service && !!input.weightKnown;
+  var price = quotable ? quote(input.direction, input.service, chargeKg) : null;
+
+  /* ETA counts from the dispatch step, so it can never land before it. */
+  var timeline = buildTimeline(t0, wait.pickupUtc);
+  var shippedUtc = timeline[timeline.length - 1].utc;
+  var etaText = '欄位不足，尚未推算';
+  var etaTextEn = '** not estimated - fields missing **';
+  if (price) {
+    var etaFrom = addBusinessDays(shippedUtc, price.etaMin);
+    var etaTo = addBusinessDays(shippedUtc, price.etaMax);
+    etaText = pad2(etaFrom.m) + '/' + pad2(etaFrom.d) + ' 至 ' + pad2(etaTo.m) + '/' + pad2(etaTo.d) +
+              '（' + price.etaMin + '-' + price.etaMax + ' 個工作天）';
+    etaTextEn = pad2(etaFrom.m) + '/' + pad2(etaFrom.d) + ' - ' + pad2(etaTo.m) + '/' + pad2(etaTo.d) +
+                ' (' + price.etaMin + '-' + price.etaMax + ' business days)';
+  }
+
+  var missingEnMap = {};
+  missingEnMap['取件地'] = 'pickup address';
+  missingEnMap['收件地'] = 'delivery address';
+  missingEnMap['品項'] = 'contents';
+  missingEnMap['重量'] = 'weight';
+  missingEnMap['時效'] = 'service level';
+  missingEnMap['方向'] = 'lane / direction';
+  missingEnMap['材積'] = 'box dimensions';
+  var openFields = [];
+  if (input.directionMissing) { openFields.push('方向'); }
+  for (var i = 0; i < input.missing.length; i++) { openFields.push(input.missing[i]); }
+  if (input.dimsMissing) { openFields.push('材積'); }
+  var missingEn = [];
+  for (var k = 0; k < openFields.length; k++) {
+    missingEn.push(missingEnMap[openFields[k]] || openFields[k]);
+  }
+
+  var model = {
+    t0: t0,
+    twP: twP,
+    ptP: ptP,
+    ptOffset: ptOffset,
+    ptAbbr: pacificAbbr(t0),
+    offsetGap: 8 - ptOffset,
+    wait: wait,
+    pickupPtP: pickupPtP,
+    pickupTwP: pickupTwP,
+    pickupAbbr: pacificAbbr(wait.pickupUtc),
+    usOpenTwText: fmtShort(pickupTwP),
+    usReplyText: fmtShort(pickupPtP) + ' ' + pacificAbbr(wait.pickupUtc),
+    actualKg: input.actualKg,
+    weightKnown: !!input.weightKnown,
+    volKg: volKg,
+    chargeKg: chargeKg,
+    dims: dims,
+    dimsMissing: !!input.dimsMissing,
+    quotable: quotable,
+    openFields: openFields,
+    price: price,
+    etaText: etaText,
+    etaTextEn: etaTextEn,
+    timeline: timeline,
+    shippedUtc: shippedUtc,
+    ticket: {
+      id: input.ticketId,
+      direction: input.direction,
+      service: input.service,
+      pickup: input.pickup,
+      dropoff: input.dropoff,
+      item: input.item,
+      deadline: input.deadline,
+      missing: input.missing,
+      missingEn: missingEn,
+      openFields: openFields,
+      lineUser: input.lineUser
+    }
+  };
+  model.summary = buildEnglishSummary(model);
+  return model;
+}
+
+/* ============================================================
+   Demo content (all fictional)
+   ============================================================ */
+
+var PRESETS = [
+  {
+    id: 'p1',
+    label: '樣品寄美國（有尺寸、有期限）',
+    text: '您好，我要寄一批樣品到美國\n' +
+          '取件地新北市三重區重新路三段188號\n' +
+          '收件人在 Irvine, CA\n' +
+          '品項是五金零件樣品，大概 12 公斤，箱子 60x40x30\n' +
+          '下週三前要到'
+  },
+  {
+    id: 'p2',
+    label: '美國代購取件回台灣（不急）',
+    text: '請問從美國代購取件回台灣\n' +
+          '東西在 City of Industry, CA 的倉庫\n' +
+          '收件地台中市西屯區台灣大道三段301號\n' +
+          '品項是保健食品 3 公斤\n' +
+          '不急，便宜就好'
+  },
+  {
+    id: 'p3',
+    label: '急件（資訊不完整，會出現需人工補）',
+    text: '急件！台北市信義區松仁路100號取件\n' +
+          '送到 Edison, NJ\n' +
+          '明天一定要出'
+  },
+  {
+    id: 'p4',
+    label: '口語化訊息（測試抽取的極限）',
+    text: '大哥我有兩箱東西要弄去美國，大概五公斤吧\n' +
+          '地址等一下給你，先幫我看多少錢'
+  }
+];
+
+var CUSTOMER_LABEL = '客戶（虛構）';
+var BOT_LABEL = '官方帳號推播';
+
+/* ============================================================
+   DOM wiring
+   ============================================================ */
+
+function todayISO(){
+  var n = new Date();
+  return n.getFullYear() + '-' + pad2(n.getMonth() + 1) + '-' + pad2(n.getDate());
+}
+
+function clampInt(v, lo, hi){
+  var n = parseInt(v, 10);
+  if (!n || n < lo) { return lo; }
+  return n > hi ? hi : n;
+}
+
+function initApp(){
+  var $ = function(id){ return document.getElementById(id); };
+
+  /* The demo should always look like it was opened today. */
+  $('orderDate').value = todayISO();
+
+  var state = {
+    parsed: null,
+    ticketId: '',
+    lineUser: 'U8f31c0demo',
+    stepIndex: 0,
+    pushes: [],
+    chatLines: [],
+    manual: { weight: false, dims: false }
+  };
+
+  var presetSel = $('preset');
+  for (var i = 0; i < PRESETS.length; i++) {
+    var opt = document.createElement('option');
+    opt.value = PRESETS[i].id;
+    opt.textContent = PRESETS[i].label;
+    presetSel.appendChild(opt);
+  }
+
+  function currentPreset(){
+    for (var i = 0; i < PRESETS.length; i++) {
+      if (PRESETS[i].id === presetSel.value) { return PRESETS[i]; }
+    }
+    return PRESETS[0];
+  }
+
+  function readInput(){
+    var p = state.parsed || parseMessage('');
+    var dir = $('direction').value;
+    var svc = $('service').value;
+    /* A field counts as known when the parser found it OR the desk typed it in. */
+    var weightKnown = (p.missing.indexOf('重量') < 0) || state.manual.weight;
+    var dimsKnown = !p.dimsMissing || state.manual.dims;
+    var missing = [];
+    for (var i = 0; i < p.missing.length; i++) {
+      var f = p.missing[i];
+      if (f === '重量' && weightKnown) { continue; }
+      if (f === '時效' && svc) { continue; }
+      missing.push(f);
+    }
+    /* and the reverse: clearing the select back to 未判定 re-opens the field */
+    if (!svc && missing.indexOf('時效') < 0) { missing.push('時效'); }
+    return {
+      orderDate: $('orderDate').value || todayISO(),
+      orderHour: parseInt($('orderHour').value, 10),
+      direction: dir,
+      service: svc,
+      actualKg: weightKnown ? parseFloat($('weight').value) : 0,
+      weightKnown: weightKnown,
+      dims: dimsKnown ? {
+        l: clampInt($('dimL').value, 1, 120),
+        w: clampInt($('dimW').value, 1, 120),
+        h: clampInt($('dimH').value, 1, 120)
+      } : null,
+      dimsMissing: !dimsKnown,
+      directionMissing: !dir,
+      pickup: p.pickup,
+      dropoff: p.dropoff,
+      item: p.item,
+      deadline: p.deadline,
+      missing: missing,
+      ticketId: state.ticketId,
+      lineUser: state.lineUser
+    };
+  }
+
+  function applyParse(){
+    var text = $('msg').value;
+    var p = parseMessage(text);
+    state.parsed = p;
+    state.stepIndex = 1;
+    state.pushes = [];
+
+    /* Nothing is inherited from the previous message: a field the parser
+       could not fill has to look empty, not carried over. */
+    state.manual = { weight: false, dims: false };
+    $('direction').value = p.direction || '';
+    $('service').value = p.service || '';
+    if (p.weightKg) {
+      var w = Math.min(70, Math.max(0.5, Math.round(p.weightKg * 2) / 2));
+      $('weight').value = String(w);
+    } else {
+      $('weight').value = '0.5';
+    }
+    if (p.dims) {
+      $('dimL').value = String(Math.min(120, p.dims.l));
+      $('dimW').value = String(Math.min(120, p.dims.w));
+      $('dimH').value = String(Math.min(120, p.dims.h));
+    } else {
+      $('dimL').value = '';
+      $('dimW').value = '';
+      $('dimH').value = '';
+    }
+
+    var dateParts = ($('orderDate').value || todayISO()).split('-');
+    var t0 = taipeiWallToUtc(
+      parseInt(dateParts[0], 10), parseInt(dateParts[1], 10), parseInt(dateParts[2], 10),
+      parseInt($('orderHour').value, 10), 30
+    );
+    state.ticketId = makeTicketId(text, taipeiParts(t0), p.direction || $('direction').value);
+
+    state.chatLines = [];
+    var lines = text.split('\n');
+    for (var i = 0; i < lines.length; i++) {
+      if (lines[i].trim().length > 0) { state.chatLines.push(lines[i].trim()); }
+    }
+
+    var stat = $('parseStat');
+    stat.textContent = '抽到 ' + p.foundCount + ' / 5 欄位';
+    stat.className = 'pill ' + (p.foundCount === 5 ? 'ok' : (p.foundCount >= 3 ? 'warn' : 'bad'));
+
+    render();
+  }
+
+  function renderChat(model){
+    var box = $('chat');
+    box.innerHTML = '';
+    var day = document.createElement('div');
+    day.className = 'day';
+    day.textContent = fmtDate(model.twP) + '（台北時間）';
+    box.appendChild(day);
+
+    var i;
+    for (i = 0; i < state.chatLines.length; i++) {
+      box.appendChild(bubble('in', CUSTOMER_LABEL, state.chatLines[i]));
+    }
+    for (i = 0; i < state.pushes.length; i++) {
+      box.appendChild(bubble('out', BOT_LABEL, state.pushes[i]));
+    }
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function bubble(dir, who, text){
+    var row = document.createElement('div');
+    row.className = 'msg ' + dir;
+    var b = document.createElement('div');
+    b.className = 'bubble';
+    var w = document.createElement('span');
+    w.className = 'who';
+    w.textContent = who;
+    b.appendChild(w);
+    b.appendChild(document.createTextNode(text));
+    row.appendChild(b);
+    return row;
+  }
+
+  function row(container, key, value, missing){
+    var k = document.createElement('div');
+    k.className = 'k';
+    k.textContent = key;
+    var v = document.createElement('div');
+    v.className = 'v' + (missing ? ' miss' : '');
+    v.textContent = value;
+    container.appendChild(k);
+    container.appendChild(v);
+  }
+
+  function renderTicket(model){
+    var t = model.ticket;
+    $('ticketId').textContent = state.stepIndex > 0 ? t.id : '尚未建單';
+    var st = $('ticketStatus');
+    st.textContent = state.stepIndex > 0 ? FLOW[state.stepIndex - 1].tw : '待建單';
+    st.className = 'pill ' + (state.stepIndex >= FLOW.length ? 'ok' : 'flat');
+
+    var box = $('ticketRows');
+    box.innerHTML = '';
+    row(box, '方向',
+        t.direction === 'us2tw' ? '美國取件 → 台灣'
+        : (t.direction === 'tw2us' ? '台灣取件 → 美國' : '未判定，需人工補'),
+        !t.direction);
+    row(box, '取件地', t.pickup || '需人工補', !t.pickup);
+    row(box, '收件地', t.dropoff || '需人工補', !t.dropoff);
+    row(box, '品項', t.item || '需人工補', !t.item);
+    row(box, '重量',
+        model.weightKnown
+          ? model.actualKg.toFixed(1) + ' kg' +
+            (model.quotable ? '／計費重 ' + model.chargeKg.toFixed(1) + ' kg' : '')
+          : '訊息未提供，人工填',
+        !model.weightKnown);
+    row(box, '材積',
+        model.dims ? model.dims.l + ' × ' + model.dims.w + ' × ' + model.dims.h + ' cm'
+                   : '訊息未提供，人工填',
+        model.dimsMissing);
+    row(box, '時效',
+        t.service === 'express' ? '特快' : (t.service === 'economy' ? '經濟' : '未判定，需人工補'),
+        !t.service);
+    if (t.deadline) { row(box, '客戶期限', t.deadline + '（客戶原詞）', false); }
+    row(box, '追蹤號', '待確認美國端系統', true);
+
+    var tbl = $('calcTable');
+    var warn = $('calcWarn');
+    tbl.innerHTML = '';
+    tbl.className = model.quotable ? 'calc' : 'calc off';
+    var head = document.createElement('tr');
+    head.innerHTML = '<th>項目</th><th>計算</th><th style="text-align:right">金額 / 重量</th>';
+    tbl.appendChild(head);
+    addCalcRow(tbl, '實際重量', model.weightKnown ? '人工輸入 / 訊息抽取' : '訊息未提供',
+               model.weightKnown ? model.actualKg.toFixed(1) + ' kg' : '—');
+    addCalcRow(tbl, '材積重',
+               model.dims ? model.dims.l + ' × ' + model.dims.w + ' × ' + model.dims.h + ' ÷ 5000'
+                          : '訊息未提供，人工填',
+               model.dims ? model.volKg.toFixed(2) + ' kg' : '—');
+    if (model.price) {
+      addCalcRow(tbl, '計費重', '取大者，進位到 0.5 kg', model.chargeKg.toFixed(1) + ' kg');
+      addCalcRow(tbl, '基本費', (model.ticket.service === 'express' ? '特快' : '經濟') + ' / ' +
+                 (model.ticket.direction === 'us2tw' ? 'US→TW' : 'TW→US'), 'NT$' + model.price.base);
+      addCalcRow(tbl, '重量費', 'NT$' + model.price.perKg + ' × ' + model.chargeKg.toFixed(1) + ' kg',
+                 'NT$' + model.price.weightFee);
+      addCalcRow(tbl, '燃油附加', Math.round(model.price.fuelRate * 100) + '% × NT$' + model.price.subtotal,
+                 'NT$' + model.price.fuel);
+      var tr = document.createElement('tr');
+      tr.className = 'total';
+      tr.innerHTML = '<td>合計（虛構費率）</td><td></td><td class="num">NT$' + model.price.total + '</td>';
+      tbl.appendChild(tr);
+      warn.style.display = 'none';
+      warn.textContent = '';
+    } else {
+      addCalcRow(tbl, '計費重', '欄位不足', '—');
+      addCalcRow(tbl, '合計', '欄位不足', '—');
+      warn.style.display = '';
+      warn.textContent = '欄位不足，無法試算：' + model.openFields.join('、') +
+        ' 尚未確認。客服補齊後這張表會自動算出來。';
+    }
+
+    $('etaNote').textContent = model.price
+      ? '預計送達：' + model.etaText +
+        '（從出貨日 ' + fmtShort(taipeiParts(model.shippedUtc)) +
+        ' 台北往後推工作天，跳過週六週日）'
+      : '預計送達：欄位補齊後才推算。';
+  }
+
+  function addCalcRow(tbl, name, how, val){
+    var tr = document.createElement('tr');
+    var a = document.createElement('td'); a.textContent = name;
+    var b = document.createElement('td'); b.textContent = how;
+    var c = document.createElement('td'); c.className = 'num'; c.textContent = val;
+    tr.appendChild(a); tr.appendChild(b); tr.appendChild(c);
+    tbl.appendChild(tr);
+  }
+
+  function renderBoard(model){
+    $('twTime').textContent = fmtTime(model.twP);
+    $('twDate').textContent = fmtDate(model.twP);
+    $('ptTime').textContent = fmtTime(model.ptP);
+    $('ptDate').textContent = fmtDate(model.ptP);
+    $('ptZone').textContent = '美西 US Pacific (' + model.ptAbbr + ', UTC' + model.ptOffset + ')';
+
+    var twOn = isBusinessHour(model.twP, 9, 18);
+    var ptOn = isBusinessHour(model.ptP, 9, 18);
+    var a = $('twShift');
+    a.textContent = twOn ? '台灣客服上班中' : '台灣客服下班';
+    a.className = 'pill ' + (twOn ? 'ok' : 'flat');
+    var b = $('ptShift');
+    b.textContent = ptOn ? '美國客服上班中' : '美國客服下班';
+    b.className = 'pill ' + (ptOn ? 'ok' : 'warn');
+
+    $('offsetNote').textContent = '時差 ' + model.offsetGap + ' 小時（台北 UTC+8，美西 ' +
+      model.ptAbbr + ' UTC' + model.ptOffset + '）。' +
+      (model.wait.immediate
+        ? '訊息進來時美國客服正好在線，可直接接手。'
+        : '訊息進來時美國客服下班，需等 ' + model.wait.waitHours +
+          ' 小時到 ' + fmtShort(model.pickupPtP) + ' ' + model.pickupAbbr + ' 才能接手。');
+
+    var ul = $('timeline');
+    ul.innerHTML = '';
+    var head = document.createElement('li');
+    head.className = 'head';
+    head.innerHTML = '<span>台北時間</span><span>美西時間</span><span>狀態</span>';
+    ul.appendChild(head);
+
+    for (var i = 0; i < model.timeline.length; i++) {
+      var s = model.timeline[i];
+      var li = document.createElement('li');
+      var done = i < state.stepIndex;
+      li.className = done ? 'done' : 'future';
+      var tw = document.createElement('span');
+      tw.className = 't';
+      tw.textContent = fmtShort(taipeiParts(s.utc));
+      var pt = document.createElement('span');
+      pt.className = 't dim';
+      pt.textContent = fmtShort(pacificParts(s.utc)) + ' ' + pacificAbbr(s.utc);
+      var lb = document.createElement('span');
+      lb.className = 'lbl';
+      lb.textContent = (s.side === 'tw' ? '台灣：' : '美國：') + s.label;
+      li.appendChild(tw); li.appendChild(pt); li.appendChild(lb);
+      ul.appendChild(li);
+
+      if (s.key === 'tw_confirmed' && !model.wait.immediate) {
+        var gap = document.createElement('li');
+        gap.className = 'gap';
+        gap.innerHTML = '';
+        var g1 = document.createElement('span'); g1.className = 't'; g1.textContent = '↓';
+        var g2 = document.createElement('span'); g2.className = 't'; g2.textContent = '';
+        var g3 = document.createElement('span');
+        g3.textContent = '跨時區空窗：距訊息進來 ' + model.wait.waitHours +
+          ' 小時，台灣已確認，美國還沒上班';
+        gap.appendChild(g1); gap.appendChild(g2); gap.appendChild(g3);
+        ul.appendChild(gap);
+      }
+    }
+
+    $('kpiWait').textContent = model.wait.immediate ? '0 h' : model.wait.waitHours + ' h';
+
+    $('advanceBtn').disabled = state.stepIndex === 0 || state.stepIndex >= FLOW.length;
+  }
+
+  function renderValue(model){
+    var msgCount = state.chatLines.length;
+    var readSec = parseInt($('readSec').value, 10);
+    var sumSec = parseInt($('summarySec').value, 10);
+    var vol = parseInt($('monthlyVol').value, 10);
+    var manual = msgCount * readSec;
+    var saved = manual - sumSec;
+    var monthlyH = Math.round(saved * vol / 3600 * 10) / 10;
+    var breakEven = msgCount > 0 ? Math.ceil(sumSec / msgCount) : 0;
+
+    $('kpiFields').textContent = (state.parsed ? state.parsed.foundCount : 0) + ' / 5';
+    $('kpiAsk').textContent = model.openFields.length + ' 欄';
+    $('kpiSave').textContent = (monthlyH >= 0 ? '' : '−') + Math.abs(monthlyH) + ' 小時';
+
+    $('valueNote').textContent = '這筆共 ' + msgCount + ' 則訊息，回讀 ' + manual +
+      ' 秒、讀摘要 ' + sumSec + ' 秒，單筆差 ' + saved + ' 秒；以每月 ' + vol +
+      ' 張單計，一個月差 ' + monthlyH + ' 小時。損益兩平點：每則訊息要回讀超過 ' +
+      breakEven + ' 秒才划算（摘要 ' + sumSec + ' 秒 ÷ ' + msgCount + ' 則）。' +
+      (model.openFields.length > 0
+        ? '但真正的差別在中間那格：這筆還有 ' + model.openFields.join('、') +
+          ' 要回頭問台灣，沒有工單就是等一輪時差。'
+        : '這筆欄位齊全，美國端不必回頭問台灣就能動作——省下的不是秒數，是一輪時差。') +
+      '（秒數為假設值，非實測）';
+  }
+
+  function render(){
+    var input = readInput();
+    var model = buildModel(input);
+    renderChat(model);
+    renderTicket(model);
+    renderBoard(model);
+    renderValue(model);
+    $('summary').textContent = state.stepIndex > 0
+      ? model.summary
+      : '先按上方的「解析並建單」，這裡會產生給美國端的英文交接摘要。';
+    $('orderHourVal').textContent = pad2(parseInt($('orderHour').value, 10)) + ':30';
+    $('weightVal').textContent = parseFloat($('weight').value).toFixed(1) + ' kg';
+    $('readSecVal').textContent = $('readSec').value + ' 秒';
+    $('summarySecVal').textContent = $('summarySec').value + ' 秒';
+    $('monthlyVolVal').textContent = $('monthlyVol').value + ' 張';
+    return model;
+  }
+
+  function advance(){
+    if (state.stepIndex >= FLOW.length) { return; }
+    var model = buildModel(readInput());
+    var step = FLOW[state.stepIndex];
+    var copy = pushCopy(step.key, model);
+    if (copy) { state.pushes.push(copy); }
+    state.stepIndex++;
+    render();
+  }
+
+  function loadPreset(){
+    $('msg').value = currentPreset().text;
+    applyParse();
+  }
+
+  presetSel.addEventListener('change', loadPreset);
+  $('parseBtn').addEventListener('click', applyParse);
+  $('resetBtn').addEventListener('click', function(){
+    state.stepIndex = state.parsed ? 1 : 0;
+    state.pushes = [];
+    render();
+  });
+  $('advanceBtn').addEventListener('click', advance);
+
+  var live = ['orderDate', 'orderHour', 'direction', 'service', 'weight', 'dimL', 'dimW', 'dimH',
+              'readSec', 'summarySec', 'monthlyVol'];
+  /* Touching a control counts as the desk filling the field in by hand. */
+  var manualMap = { weight: 'weight', dimL: 'dims', dimW: 'dims', dimH: 'dims' };
+  for (var mk in manualMap) {
+    if (Object.prototype.hasOwnProperty.call(manualMap, mk)) {
+      (function(id, flag){
+        $(id).addEventListener('input', function(){ state.manual[flag] = true; });
+      })(mk, manualMap[mk]);
+    }
+  }
+  for (var j = 0; j < live.length; j++) {
+    $(live[j]).addEventListener('input', render);
+    $(live[j]).addEventListener('change', render);
+  }
+
+  $('copyBtn').addEventListener('click', function(){
+    var text = $('summary').textContent;
+    var done = function(ok){
+      $('copyStat').textContent = ok ? '已複製' : '此環境不允許複製，請手動選取';
+    };
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function(){ done(true); }, function(){ done(false); });
+      } else {
+        done(false);
+      }
+    } catch (e) {
+      done(false);
+    }
+  });
+
+  loadPreset();
+}
+
+if (typeof document !== 'undefined') {
+  initApp();
+}
+</script>
+</body>
+</html>
